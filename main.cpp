@@ -40,6 +40,7 @@ int main() {
 	ascii::luminance(imageData, asciiData, width, height);
 	//ascii::edges(imageData, asciiData, width, height); //TBA
 	ascii::draw(asciiData, width, height);
+	stbi_image_free(imageData);
 
 
 

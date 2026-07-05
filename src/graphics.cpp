@@ -13,9 +13,7 @@ namespace graphics {
 int loadImage(const std::string path, unsigned char** pxData, size_t* width=nullptr, size_t* height=nullptr) {
 	int w, h, c;
 	unsigned char* textureDataSTBI = stbi_load(
-		path.c_str(),
-		&w, &h,
-		&c, 3 //Only take RGB back, not A.
+		path.c_str(), &w, &h, &c, 3 //Only take RGB
 	);
 
 	if (!textureDataSTBI) {return FALSE; /* Failed to load. */}
@@ -24,7 +22,6 @@ int loadImage(const std::string path, unsigned char** pxData, size_t* width=null
 	if (height) {*height = h;}
 
 	*pxData = textureDataSTBI;
-	stbi_image_free(textureDataSTBI);
 	return TRUE;
 }
 
@@ -69,7 +66,10 @@ float getLuminanceOfRGB(unsigned char R, unsigned char G, unsigned char B) {
 
 
 void luminance(unsigned char* pxData, unsigned char* asciiData, const size_t width, const size_t height) {
-	const std::string asciiChars = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
+	//const std::string asciiChars = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"; //[https://stackoverflow.com/a/74186686]
+	//const std::string asciiChars = ".'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$"; //[https://stackoverflow.com/a/67780964]
+	const std::string asciiChars = " .;coPO?@#"; //Acerola : [https://youtu.be/gg40RWiaHRY]
+
 	for (unsigned int y=0u; y<height; y++) {
 		for (unsigned int x=0u; x<width; x++) {
 			unsigned int index = (y * width) + x;
@@ -99,7 +99,6 @@ void draw(unsigned char* asciiData, const size_t width, const size_t height) {
 		std::string line = std::string(
 			reinterpret_cast<const char*>(asciiData + y * width), width
 		);
-
 		std::cout << line << '\n';
 	}
 }
