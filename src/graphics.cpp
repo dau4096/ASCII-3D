@@ -4,6 +4,7 @@
 #include "utils.h"
 #include <stb_image.h>
 #include <stb_image_write.h>
+#include <math.h>
 
 
 
@@ -54,18 +55,22 @@ float getLuminanceOfRGB(unsigned char R, unsigned char G, unsigned char B) {
 	float vG = (float)(G) / 255.0f;
 	float vB = (float)(B) / 255.0f;
 
+	return (vR + vG + vB) / 3.0f;
+
+	/*
 	return (
 		0.2126f * sRGBtoLin(vR) +
 		0.7152f * sRGBtoLin(vG) +
 		0.0722f * sRGBtoLin(vB)
 	);
+	*/
 }
 //https://stackoverflow.com/a/56678483
 //// sRGB LUMINANCE ////
 
 
 
-const std::string asciiChars = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"; //[https://stackoverflow.com/a/74186686]
+const std::string asciiChars = " `.-':,^=;><+!rc*z?sLTv)J7(Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"; //[https://stackoverflow.com/a/74186686]
 //const std::string asciiChars = ".'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$"; //[https://stackoverflow.com/a/67780964]
 //const std::string asciiChars = " .;coPO?@#"; //Acerola : [https://youtu.be/gg40RWiaHRY]
 void luminance(const unsigned char* pxData, unsigned char* asciiData, float* luminanceData, const size_t width, const size_t height) {
@@ -92,70 +97,150 @@ void gaussian(const float* luminanceData, float* gaussianData, const size_t widt
 	//Gaussian blur with given strength.
 	float kernel[13][13];
 	for (int y=-6; y<=6; y++) {
-	    for (int x=-6; x<=6; x++) {
-	        kernel[y+6][x+6] = std::exp(-(x*x + y*y)/(2.0f*sigma*sigma));
-	    }
+		for (int x=-6; x<=6; x++) {
+			kernel[y+6][x+6] = std::exp(-(x*x + y*y)/(2.0f*sigma*sigma));
+		}
 	}
 
 
-    for (size_t y=0u; y<height; y++) {
-        for (size_t x=0u; x<width; x++) {
-            float sum = 0.0f;
-		    float kernelSum = 0.0f;
+	for (size_t y=0u; y<height; y++) {
+		for (size_t x=0u; x<width; x++) {
+			float sum = 0.0f;
+			float kernelSum = 0.0f;
 
-            for (int ky=-6; ky<=6; ky++) {
-                for (int kx=-6; kx<=6; kx++) {
-                    size_t ix = x + kx;
-                    size_t iy = y + ky;
+			for (int ky=-6; ky<=6; ky++) {
+				for (int kx=-6; kx<=6; kx++) {
+					size_t ix = x + kx;
+					size_t iy = y + ky;
 
-                    if (((int)(x) + kx < 0) || ((int)(y) + ky < 0) || ((int)(x) + kx >= width) || ((int)(y) + ky >= height)) {continue;}
+					if (((int)(x) + kx < 0) || ((int)(y) + ky < 0) || ((int)(x) + kx >= width) || ((int)(y) + ky >= height)) {continue;}
 
-                    float kVal = kernel[ky+6][kx+6];
-                    sum += luminanceData[iy * width + ix] * kVal;
-			        kernelSum += kVal;
-                }
-            }
+					float kVal = kernel[ky+6][kx+6];
+					sum += luminanceData[iy * width + ix] * kVal;
+					kernelSum += kVal;
+				}
+			}
 
-            gaussianData[y * width + x] = std::clamp(sum / kernelSum, 0.0f, 1.0f);
-        }
-    }
+			gaussianData[y * width + x] = std::clamp(sum / kernelSum, 0.0f, 1.0f);
+		}
+	}
 }
 
 
-void differenceOfGaussians(const float* luminanceData, unsigned char* DoGdata, const size_t width, const size_t height) {
+void differenceOfGaussians(const float* luminanceData, float* DoGdata, const size_t width, const size_t height) {
 	//Delta of 2 gaussian blurs of differing strengths.
-    std::vector<float> blur1 = std::vector<float>(width * height);
-    std::vector<float> blur2 = std::vector<float>(width * height);
+	std::vector<float> blur1 = std::vector<float>(width * height);
+	std::vector<float> blur2 = std::vector<float>(width * height);
 
-    gaussian(luminanceData, blur1.data(), width, height, 1.0f);
-    gaussian(luminanceData, blur2.data(), width, height, 2.0f);
+	gaussian(luminanceData, blur1.data(), width, height, 1.0f);
+	gaussian(luminanceData, blur2.data(), width, height, 2.0f);
 
 
-    for (size_t i=0u; i<width*height; i++) {
-        float diff = blur2[i] - blur1[i];
-
-        DoGdata[i] = static_cast<unsigned char>((diff + 1.0f) * 127.5f);
-    }
+	for (size_t i=0u; i<width*height; i++) {
+		DoGdata[i] = blur2[i] - blur1[i];
+	}
 }
 
+
+
+
+void sobel(const float* inputData, float* sobelAngles, const size_t width, const size_t height) {
+	//Use sobel filter on difference of gaussians data, then [atan2() + Pi] to get angle. If no edge, angle is some negative value (ignored later)
+	static constexpr int Gx[3][3] = {
+		{-1, 0, 1},
+		{-2, 0, 2},
+		{-1, 0, 1}
+	};
+	static constexpr int Gy[3][3] = {
+		{-1, -2, -1},
+		{ 0,  0,  0},
+		{ 1,  2,  1}
+	};
+	constexpr float edgeThreshold = 0.25f;
+
+
+
+	//Mark everything as "not an edge"
+	std::fill(sobelAngles, sobelAngles + width * height, -1.0f);
+
+	for (size_t y=1; y<height-1; y++) {
+		for (size_t x=1; x<width-1; x++) {
+			float gx = 0.0f, gy = 0.0f;
+
+			for (int ky=-1; ky<=1; ky++) {
+				for (int kx=-1; kx<=1; kx++) {
+					float p = inputData[(y + ky) * width + (x + kx)];
+
+					gx += p * Gx[ky + 1][kx + 1];
+					gy += p * Gy[ky + 1][kx + 1];
+				}
+			}
+
+
+			float mag = std::sqrt(gx * gx + gy * gy);
+			if (mag < edgeThreshold) {continue;}
+
+			float angle = std::atan2(gy, gx);
+			if (angle < 0.0f) {angle += constants::PI2;}
+
+			float edgeAngle = angle + constants::PI / 2.0f;
+			if (edgeAngle >= 2.0f * std::numbers::pi_v<float>) {edgeAngle -= constants::PI2;}
+
+			sobelAngles[y * width + x] = edgeAngle;
+		}
+	}
+}
+
+
+
+char edgeChar(float angle) {
+	angle += constants::PI / 8.0f; //Centre the bins
+	if (angle >= 2*constants::PI) {angle -= constants::PI2;}
+
+	int sector = (int)(angle / (constants::PI/4.0f)) & 0b111;
+	switch (sector) {
+		case 0b000: case 0b100: {
+			return '|';
+		}
+
+		case 0b001: case 0b101: {
+			return '/';
+		}
+
+		case 0b010: case 0b110: {
+			return '_';
+		}
+
+		case 0b011: case 0b111: {
+			return '\\';
+		}
+
+		default: {
+			return '?';
+		}
+	}
+}
 
 
 
 void edges(const float* luminanceData, unsigned char* asciiData, const size_t width, const size_t height) {
 	//Difference of Gaussians to find areas of high luminance change
-	std::vector<unsigned char> DoGauss = std::vector<unsigned char>(width * height);
+	std::vector<float> DoGauss = std::vector<float>(width * height);
 	differenceOfGaussians(luminanceData, DoGauss.data(), width, height);
 
 	//Sobel filter for edge direction
+	std::vector<float> sobelAngles = std::vector<float>(width * height); //Angle of each px. Negative if not an edge. (If edge, will be in range 0-2pi)
+	sobel(DoGauss.data(), sobelAngles.data(), width, height);
 
 	//Draw ascii characters representing edges from sobel data
-
-
-	/*
-	//DEBUG
-    for (size_t i=0u; i<width*height; i++) {
-    	asciiData[i] = (DoGauss[i] > 127) ? '#' : ' ';
-    }*/
+	for (unsigned int i=0u; i<width*height; i++) {
+		float edgeAngle = sobelAngles[i];
+		if (edgeAngle < 0.0f) {
+			continue; //Use original luminance character.
+		} else {
+			asciiData[i] = edgeChar(edgeAngle + constants::PI/2.0f);
+		}
+	}
 }
 
 

@@ -65,17 +65,11 @@ namespace utils {
 	}
 
 
-	static inline bool isVec2NaN(glm::vec2 v) {return (std::isnan(v.x) || std::isnan(v.y));}
-	static inline bool isVec3NaN(glm::vec3 v) {return (std::isnan(v.x) || std::isnan(v.y) || std::isnan(v.z));}
-
 
 	template<typename T>
 	static inline void combineVectors(std::vector<T>* A, std::vector<T>& B) {
 		A->insert(A->end(), B.begin(), B.end());
 	}
-
-
-	float determinant(glm::vec2 vecA, glm::vec2 vecB);
 
 
 	int RNGc(); //Client

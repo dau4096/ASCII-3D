@@ -29,7 +29,7 @@ int main() {
 	size_t width, height; //Assumes same number of ASCII characters as pixels.
 	unsigned char* imageData;
 	//Will eventually be replaced with OpenGL scene rendered at low res.
-	if (!graphics::loadImage("images/a.png", &imageData, &width, &height)) {
+	if (!graphics::loadImage("images/test-scene.short.png", &imageData, &width, &height)) {
 		//Failed
 		std::cerr << "Failed to load image." << std::endl;
 		return -1;
