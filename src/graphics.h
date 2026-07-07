@@ -22,7 +22,7 @@ namespace ascii {
 	void edges(const float* luminanceData, unsigned char* asciiData, const size_t width, const size_t height);
 
 
-	void draw(const unsigned char* asciiData, const size_t width, const size_t height);
+	void draw(const unsigned char* pxData, const unsigned char* asciiData, const size_t width, const size_t height);
 
 }
 

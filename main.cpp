@@ -40,7 +40,7 @@ int main() {
 	float* luminanceData = (float*)calloc(width * height, sizeof(float));
 	ascii::luminance(imageData, asciiData, luminanceData, width, height);
 	ascii::edges(luminanceData, asciiData, width, height); //TBA
-	ascii::draw(asciiData, width, height);
+	ascii::draw(imageData, asciiData, width, height);
 	stbi_image_free(imageData);
 
 

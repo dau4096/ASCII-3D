@@ -5,6 +5,7 @@
 #include <stb_image.h>
 #include <stb_image_write.h>
 #include <math.h>
+#include <format>
 
 
 
@@ -70,8 +71,8 @@ float getLuminanceOfRGB(unsigned char R, unsigned char G, unsigned char B) {
 
 
 
-const std::string asciiChars = " `.-':,^=;><+!rc*z?sLTv)J7(Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"; //[https://stackoverflow.com/a/74186686]
-//const std::string asciiChars = ".'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$"; //[https://stackoverflow.com/a/67780964]
+const std::string asciiChars = " `.':_,^=;><+!rc*z?sLTv)J7(Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"; //[https://stackoverflow.com/a/74186686]
+//const std::string asciiChars = ".'`^\",:;Il!i><~+_?][}{1)(tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$"; //[https://stackoverflow.com/a/67780964]
 //const std::string asciiChars = " .;coPO?@#"; //Acerola : [https://youtu.be/gg40RWiaHRY]
 void luminance(const unsigned char* pxData, unsigned char* asciiData, float* luminanceData, const size_t width, const size_t height) {
 
@@ -208,7 +209,7 @@ char edgeChar(float angle) {
 		}
 
 		case 0b010: case 0b110: {
-			return '_';
+			return '-';
 		}
 
 		case 0b011: case 0b111: {
@@ -235,9 +236,8 @@ void edges(const float* luminanceData, unsigned char* asciiData, const size_t wi
 	//Draw ascii characters representing edges from sobel data
 	for (unsigned int i=0u; i<width*height; i++) {
 		float edgeAngle = sobelAngles[i];
-		if (edgeAngle < 0.0f) {
-			continue; //Use original luminance character.
-		} else {
+		if (edgeAngle >= 0.0f) {
+			//Replace with edge character
 			asciiData[i] = edgeChar(edgeAngle + constants::PI/2.0f);
 		}
 	}
@@ -250,12 +250,33 @@ void edges(const float* luminanceData, unsigned char* asciiData, const size_t wi
 
 
 
-void draw(const unsigned char* asciiData, const size_t width, const size_t height) {
-	for (size_t y=0u; y<height; y++) {
-		std::string line = std::string(
-			reinterpret_cast<const char*>(asciiData + y * width), width
-		);
-		std::cout << line << '\n';
+void draw(const unsigned char* pxData, const unsigned char* asciiData, const size_t width, const size_t height) {
+	for (size_t y = 0; y < height; ++y) {
+		unsigned char lastR = 255u, lastG = 255u, lastB = 255u;
+		bool first = true;
+		for (size_t x = 0; x < width; ++x) {
+			size_t index = (y * width + x) * 3u;
+
+			unsigned char R = pxData[index + 0u];
+			unsigned char G = pxData[index + 1u];
+			unsigned char B = pxData[index + 2u];
+
+			if (
+				first ||
+				(R != lastR) ||
+				(G != lastG) ||
+				(B != lastB)
+			) {
+				std::cout << "\x1b[38;2;" << int(R) << ';' << int(G) << ';' << int(B) << 'm';
+
+				lastR = R; lastG = G; lastB = B;
+				first = false;
+			}
+
+			std::cout << asciiData[index / 3u];
+		}
+
+		std::cout << "\x1b[0m\n";
 	}
 }
 
