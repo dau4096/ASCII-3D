@@ -37,8 +37,9 @@ int main() {
 	std::cout << "Loaded image with res: (" << width << ", " << height << ")" << std::endl;
 
 	unsigned char* asciiData = (unsigned char*)calloc(width * height, sizeof(unsigned char));
-	ascii::luminance(imageData, asciiData, width, height);
-	//ascii::edges(imageData, asciiData, width, height); //TBA
+	float* luminanceData = (float*)calloc(width * height, sizeof(float));
+	ascii::luminance(imageData, asciiData, luminanceData, width, height);
+	ascii::edges(luminanceData, asciiData, width, height); //TBA
 	ascii::draw(asciiData, width, height);
 	stbi_image_free(imageData);
 

@@ -11,7 +11,7 @@
 
 namespace constants {
 	//Mathematical Constants
-	constexpr float PI = 3.141592f;
+	constexpr float PI = std::numbers::pi_v<float>;
 	constexpr float PI2 = PI * 2.0f;
 	constexpr float EXP = 2.718281f;
 	constexpr float INF = std::numeric_limits<float>::infinity();
