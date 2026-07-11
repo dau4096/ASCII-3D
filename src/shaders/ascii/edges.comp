@@ -88,11 +88,8 @@ void main() {
 
 	float mag = sqrt(dot(g,g));
 	if (mag >= edgeThreshold) {
-		float angle = atan(g.y, g.x);
-		if (angle < 0.0f) {angle += hPI;}
-
-		float edgeAngle = angle + PI2;
-		if (edgeAngle >= PI2) {edgeAngle -= PI2;}
+		float edgeAngle = atan(g.y, g.x);
+		if (edgeAngle < 0.0f) {edgeAngle += PI2;}
 
 		//Must be an edge. Proceed with edge-drawing logic;
 		uint ASCII = getEdgeCharacter(edgeAngle);
