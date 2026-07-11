@@ -1,0 +1,68 @@
+/* gaussian.comp */
+#version 460 core
+
+layout(local_size_x=16, local_size_y=16, local_size_z=1) in;
+
+layout(rgba8ui, binding=2) uniform uimage2D imageData; //Stores generic info about luminance and the 2 blurs.
+
+
+#include <ascii/constants>
+
+
+
+layout(std430, binding=1) buffer kernelASSBO {
+	float gaussianKernelA[];
+};
+
+layout(std430, binding=2) buffer kernelBSSBO {
+	float gaussianKernelB[];
+};
+
+
+uniform uint gaussianRadius;
+uniform uvec2 resolution;
+uniform bool selGaussKernel; //Select B (1) or A (0).
+
+
+void main() {
+	uvec2 imagePosition = gl_GlobalInvocationID.xy;
+	uvec4 pixelData = imageLoad(imageData, ivec2(imagePosition)).rgba;
+
+	float sum = 0.0f;
+	float kernelSum = 0.0f;
+	int gR = int(gaussianRadius);
+	if (selGaussKernel) {
+		//Gaussian B
+		for (int ky=-gR; ky<=gR; ky++) {
+			for (int kx=-gR; kx<=gR; kx++) {
+				uvec2 i = imagePosition.xy + uvec2(kx, ky);
+				//Will overflow if a position is out of the map.
+				if ((i.x >= resolution.x) || (i.y >= resolution.y)) {continue;}
+
+				int kernelIndex = (ky + gR) * (gR*2+1) + kx+gR;
+				float kVal = gaussianKernelB[kernelIndex];
+				sum += float(imageLoad(imageData, ivec2(i)).r) * kVal;
+				kernelSum += kVal;
+			}
+		}
+		pixelData.b = uint(clamp(sum / kernelSum, 0.0, 255.0));
+
+	} else {
+		//Gaussian A
+		for (int ky=-gR; ky<=gR; ky++) {
+			for (int kx=-gR; kx<=gR; kx++) {
+				uvec2 i = imagePosition.xy + uvec2(kx, ky);
+				//Will overflow if a position is out of the map.
+				if ((i.x >= resolution.x) || (i.y >= resolution.y)) {continue;}
+
+				int kernelIndex = (ky + gR) * (gR*2+1) + kx+gR;
+				float kVal = gaussianKernelA[kernelIndex];
+				sum += imageLoad(imageData, ivec2(i)).r * kVal;
+				kernelSum += kVal;
+			}
+		}
+		pixelData.g = uint(clamp(sum / kernelSum, 0.0, 255.0));
+	}
+
+	imageStore(imageData, ivec2(imagePosition), pixelData);
+}

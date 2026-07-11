@@ -1,10 +1,28 @@
 /* utils.cpp */
+#include <string>
+#include <stdexcept>
+#include <filesystem>
+#include <fstream>
 
 #include "global.h"
 #include "constants.h"
 
 
 namespace utils {
+
+
+std::string readFile(const std::string& filePath) {
+	std::ifstream fileStream(filePath, std::ios::binary);
+	if (!fileStream.is_open()) {
+		throw std::runtime_error("Error: Could not open file: " + filePath);
+	}
+
+	std::ostringstream buffer;
+	buffer << fileStream.rdbuf();
+	return buffer.str();
+}
+
+
 
 
 int RNGcIdx = 0, RNGwIdx = 0;

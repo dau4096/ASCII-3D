@@ -20,4 +20,13 @@ namespace constants {
 	constexpr float TO_RAD = 0.017453f;
 	constexpr float TO_DEG = 57.29577f;
 
+
+	namespace display {
+
+		//Opengl 460 core.
+		constexpr int OPENGL_VERSION_MAJOR = 4;
+		constexpr int OPENGL_VERSION_MINOR = 6;
+		
+	}
+
 }

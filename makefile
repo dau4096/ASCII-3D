@@ -1,6 +1,5 @@
 CC = g++
-CFLAGS = -std=c++23 \
-         
+CFLAGS = -std=c++23        
 
 INCLUDE = -I/usr/include -I/usr/include/GL -I/usr/include/glm -I/usr/local/include
 
@@ -17,7 +16,7 @@ release: CFLAGS += -O3 -ffast-math
 release: $(OBJECTS)
 	$(CC) $(OBJECTS) $(LIBS) $(INCLUDE) -o $(BINFILE)
 
-debug: CFLAGS += -g
+debug: CFLAGS += -g -DPAUSE_ON_OPENGL_ERROR
 debug: $(OBJECTS)
 	$(CC) $(OBJECTS) $(LIBS) $(INCLUDE) -o $(BINFILE)
 

@@ -48,6 +48,17 @@ namespace utils {
 		string pause;
 		std::cin >> pause;
 	}
+	static inline void GLErrorcheck(std::string location = "", bool shouldPause = false) {
+		GLenum GLError;
+		GLError = glGetError();
+		if (GLError != GL_NO_ERROR) {
+			if (!utils::isConsoleVisible()) {
+				utils::showConsole();
+			}
+			std::cerr << location << " | OpenGL error; " << GLError << std::endl;
+			if (shouldPause) {pause();}
+		}
+	}
 
 
 
@@ -63,6 +74,8 @@ namespace utils {
 		std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c){return std::toupper(c);});
 		return result;
 	}
+
+	std::string readFile(const std::string& filePath);
 
 
 

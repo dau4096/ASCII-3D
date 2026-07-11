@@ -1,0 +1,32 @@
+/* luminance.comp */
+#version 460 core
+
+layout(local_size_x=16, local_size_y=16, local_size_z=1) in;
+
+layout(binding=0) uniform sampler2D pixelData; //Original input image data (RGB)
+layout(r8ui, binding=1) writeonly uniform uimage2D asciiData; //Text data (ASCII format)
+layout(rgba8ui, binding=2) writeonly uniform uimage2D imageData; //Stores generic info about luminance and later, blurs and edges.
+
+
+layout(std430, binding=0) buffer asciiCharacterMappingSSBO {
+	uint asciiChars[];
+};
+uniform uint numAsciiChars; //^^
+
+#include <ascii/constants>
+#include <ascii/greyscale>
+
+
+void main() {
+	uvec2 imagePosition = gl_GlobalInvocationID.xy;
+	vec3 inColour = texelFetch(pixelData, ivec2(imagePosition), 0).rgb;
+
+	float luminanceFloat = getLuminance(inColour);
+	uint luminanceInt = uint(luminanceFloat * 255.0f);
+	uint ASCII = asciiChars[
+		min(int(luminanceFloat * numAsciiChars), numAsciiChars-1)
+	];
+
+	imageStore(asciiData, ivec2(imagePosition), uvec4(ASCII, 0u, 0u, 0u));
+	imageStore(imageData, ivec2(imagePosition), uvec4(luminanceInt, 0u, 0u, 0u));
+}
