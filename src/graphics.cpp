@@ -526,6 +526,7 @@ namespace ascii {
 		//Runs luminance.comp
 		glUseProgram(GLIndex::luminanceShader);
 		uniforms::bindUniformValue(GLIndex::luminanceShader, "numAsciiChars", (unsigned int)(numAsciiChars));
+		uniforms::bindUniformValue(GLIndex::luminanceShader, "resolution", resolution);
 		glBindTextureUnit(0, inputImageID);
 		glBindImageTexture(1, asciiImageID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R8UI);
 		glBindImageTexture(2, dataImageID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8UI);

@@ -26,6 +26,7 @@ uniform bool selGaussKernel; //Select B (1) or A (0).
 
 void main() {
 	uvec2 imagePosition = gl_GlobalInvocationID.xy;
+	if ((imagePosition.x >= resolution.x) || (imagePosition.y >= resolution.y)) {return;}
 	uvec4 pixelData = imageLoad(imageData, ivec2(imagePosition)).rgba;
 
 	float sum = 0.0f;

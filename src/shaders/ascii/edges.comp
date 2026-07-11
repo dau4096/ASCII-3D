@@ -12,31 +12,24 @@ layout(rgba8ui, binding=2) uniform uimage2D imageData; //Stores generic info abo
 
 
 
+#define ASCII_BAR 124u   /* | */
+#define ASCII_FSLASH 47u /* / */
+#define ASCII_DASH 45u   /* - */
+#define ASCII_BSLASH 92u /* \ */
+#define ASCII_QMARK 63u  /* ? */
+
+
 uint getEdgeCharacter(float angle) {
 	angle += PI / 8.0f; //Centre the bins
 	if (angle >= 2*PI) {angle -= PI2;}
 
 	int sector = int(angle / (PI/4.0f)) & 0x7;
 	switch (sector) {
-		case 0x0: case 0x4: {
-			return 124u; //'|'
-		}
-
-		case 0x1: case 0x5: {
-			return 47u; //'/'
-		}
-
-		case 0x2: case 0x6: {
-			return 45u; //'-'
-		}
-
-		case 0x3: case 0x7: {
-			return 92u; //'\'
-		}
-
-		default: {
-			return 63u; //'?'
-		}
+		case 0x0: case 0x4: {return ASCII_BAR;}
+		case 0x1: case 0x5: {return ASCII_FSLASH;}
+		case 0x2: case 0x6: {return ASCII_DASH;}
+		case 0x3: case 0x7: {return ASCII_BSLASH;}
+		default: {return ASCII_QMARK;}
 	}
 }
 
@@ -66,8 +59,29 @@ const float edgeThreshold = 0.25f;
 uniform uvec2 resolution;
 
 
+
+#define ASCII_WRITE(CHAR) imageStore(asciiData, ivec2(imagePosition), uvec4(CHAR, 0u, 0u, 0u))
+
+
+
 void main() {
 	uvec2 imagePosition = gl_GlobalInvocationID.xy;
+	if ((imagePosition.x >= resolution.x) || (imagePosition.y >= resolution.y)) {return;}
+
+
+#ifdef DRAW_SCREEN_BORDER
+	bool isLeftEdge = (imagePosition.x == 0);
+	bool isRightEdge = (imagePosition.x == resolution.x-1u);
+	bool isTopEdge = (imagePosition.y == 0);
+	bool isBottomEdge = (imagePosition.y == resolution.y-1u);
+	
+	if ((isLeftEdge && isTopEdge) || (isRightEdge && isBottomEdge)) {ASCII_WRITE(ASCII_FSLASH); return;}
+	else if ((isRightEdge && isTopEdge) || (isLeftEdge && isBottomEdge)) {ASCII_WRITE(ASCII_BSLASH); return;}
+	else if (isLeftEdge || isRightEdge) {ASCII_WRITE(ASCII_BAR); return;}
+	else if (isTopEdge || isBottomEdge) {ASCII_WRITE(ASCII_DASH); return;}
+#endif
+
+
 
 	//Difference of Gaussians
 	uvec4 pixelData = imageLoad(imageData, ivec2(imagePosition)).rgba;
@@ -92,8 +106,8 @@ void main() {
 		if (edgeAngle < 0.0f) {edgeAngle += PI2;}
 
 		//Must be an edge. Proceed with edge-drawing logic;
-		uint ASCII = getEdgeCharacter(edgeAngle);
-		imageStore(asciiData, ivec2(imagePosition), uvec4(ASCII, 0u, 0u, 0u));
+		uint ASCIIchar = getEdgeCharacter(edgeAngle);
+		ASCII_WRITE(ASCIIchar);
 
 
 		pixelData.a = uint((edgeAngle / PI2) * 255.0f); //Angle
